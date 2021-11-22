@@ -24,3 +24,24 @@ func IsUnblocked(authToken, blockId string) (bool, error) {
 func Unblock(authToken, blockId string) error {
 	return nil
 }
+
+func doHttpRequest(authToken, path string) ([]byte, error) {
+	var targetUrl string = fmt.Sprintf(APIURL, path)
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", targetUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("x-auth-token", authToken)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
+}
