@@ -1,5 +1,14 @@
 package client
 
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+)
+
+const APIURL = "https://internal-api.mercadopago.com/regulations/bacenjud/%s"
+
 type Protocol struct {
 	BlockIds []string `json:"block_ids"`
 }
@@ -14,11 +23,36 @@ type Block struct {
 }
 
 func GetBlockIds(authToken, protocolId string) ([]string, error) {
-	return []string{"123", "456"}, nil
+	var protocol Protocol
+
+	respBody, err := doHttpRequest(authToken, fmt.Sprintf("protocolo/%s", protocolId))
+	if err != nil {
+		return []string{}, err
+	}
+
+	json.Unmarshal(respBody, &protocol)
+
+	return protocol.BlockIds, nil
 }
 
 func IsUnblocked(authToken, blockId string) (bool, error) {
-	return false, nil
+	var block Block
+
+	respBody, err := doHttpRequest(authToken, fmt.Sprintf("bloqueio-judicial?idBloqueioJud=%s", blockId))
+	if err != nil {
+		return false, err
+	}
+
+	err = json.Unmarshal(respBody, &block)
+	if err != nil {
+		return false, err
+	}
+
+	if block.BlockData.Amount > 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func Unblock(authToken, blockId string) error {
